@@ -8,6 +8,6 @@ defmodule NomNomsFarm.UsdaFarm do
     field :address, :string
 
     # distinct from the mysql id. this one comes from usda.
-    field :usda_id, :string
+    field :usda_uid, :string
   end
 end
