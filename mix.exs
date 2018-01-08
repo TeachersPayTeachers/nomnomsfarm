@@ -28,4 +28,10 @@ defmodule NomNomsFarm.Mixfile do
       {:mariaex, "~> 0.8.3"},
     ]
   end
+
+  defp aliases do
+    ["ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+     "ecto.reset": ["ecto.drop", "ecto.setup"],
+     "test": ["ecto.create --quiet", "ecto.migrate", "test"]]
+  end
 end
