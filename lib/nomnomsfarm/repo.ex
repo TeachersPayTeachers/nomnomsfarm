@@ -1,3 +1,3 @@
-defmodule NomNomsFarms.Repo do
+defmodule NomNomsFarm.Repo do
   use Ecto.Repo, otp_app: :nomnomsfarm
 end

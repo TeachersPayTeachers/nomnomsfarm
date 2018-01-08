@@ -2,15 +2,15 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :nomnomsfarm, NomNomsFarms.Repo,
-  adapter: Ecto.Adapters.Mariaex,
+config :nomnomsfarm, NomNomsFarm.Repo,
+  adapter: Ecto.Adapters.MySQL,
   database: "nomnomsfarm",
   username: "root",
   password: "",
   hostname: "localhost"
 
 config :nomnomsfarm,
-  ecto_repos: [NomNomsFarms.Repo]
+  ecto_repos: [NomNomsFarm.Repo]
 
 
 # This configuration is loaded before any dependency and is restricted
