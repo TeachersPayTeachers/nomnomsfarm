@@ -25,5 +25,18 @@ defmodule NomNomsFarmTest do
 
       assert :ok = NomNomsFarm.register_farm_admin(args)
     end
+
+    test "fails when usda_uid is not found in db" do
+      args = %{
+        username: "Bob",
+        password: "password",
+        name: "bob",
+        email: "bob@bob.com",
+        usda_uid: "00920",
+        farm_name: "bob's sunflower farm"
+      }
+
+      assert {:error, :invalid_usda_uid} = NomNomsFarm.register_farm_admin(args)
+    end
   end
 end
