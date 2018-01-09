@@ -13,42 +13,17 @@ defmodule NomNomsFarm do
     farm_name: String.t,
   }
 
-  def create_user do
-    # Repo.insert!(
-      # %{
-        # username: "ha",
-        # password: "ha",
-        # name: "ha",
-        # email: "ha",
-      # }
-    # )
-  end
-
   @spec register_farm_admin(new_admin_args) :: :ok | {:error, String.t}
-  def register_farm_admin(%{
-    username: username,
-    password: password,
-    name: name,
-    email: email,
-    usda_uid: usda_uid,
-    farm_name: farm_name
-  }) do
-    Repo.transaction(fn ->
-      with {:ok, usda_farm_id} <- get_usda_farm_id(usda_uid),
-           :ok <- farm_is_available(usda_farm_id),
-           {:ok, user_id} <- User.create(username, password, name, email),
-           {:ok, farm_id} <- Farm.create(farm_name, usda_farm_id),
-           {:ok, _} <- Farmer.create(user_id, farm_id, true)
-      do
-        user_id
-      else
-        {:error, error} -> Repo.rollback(error_message(error))
-      end
-    end)
-    |> case do
-         {:ok, _} -> :ok
-         {:error, _} = e  -> e
-       end
+  def register_farm_admin(%{usda_uid: usda_uid} = args) do
+    with {:ok, usda_farm_id} <- get_usda_farm_id(usda_uid),
+         :ok <- farm_is_available(usda_farm_id),
+         merged_args = Map.merge(args, %{usda_farm_id: usda_farm_id}),
+         {:ok, _} <- create_records(merged_args)
+    do
+      :ok
+    else
+      {:error, _} = e -> e
+    end
   end
 
   @spec get_usda_farm_id(String.t) :: {:ok, integer} | {:error, atom}
@@ -66,6 +41,27 @@ defmodule NomNomsFarm do
       _ -> {:error, :farm_already_claimed}
     end
   end
+
+  defp create_records(%{
+    username: username,
+    password: password,
+    name: name,
+    email: email,
+    usda_farm_id: usda_farm_id,
+    farm_name: farm_name
+  }) do
+    Repo.transaction(fn ->
+      with {:ok, user_id} <- User.create(username, password, name, email),
+           {:ok, farm_id} <- Farm.create(farm_name, usda_farm_id),
+           {:ok, _} <- Farmer.create(user_id, farm_id, true)
+      do
+        user_id
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+  end
+
 
   @spec error_message(atom) :: String.t
   def error_message(:invalid_usda_uid), do: "Invalid USDA uid entered."
