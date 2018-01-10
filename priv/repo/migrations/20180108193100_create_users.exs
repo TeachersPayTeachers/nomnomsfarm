@@ -8,5 +8,7 @@ defmodule NomNomsFarm.Repo.Migrations.CreateUsers do
       add :name, :string
       add :email, :string
     end
+
+    create unique_index(:users, [:email])
   end
 end
