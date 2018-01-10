@@ -15,12 +15,12 @@ defmodule NomNomsFarmTest do
       Repo.insert!(%UsdaFarm{name: "Bartleby & Son's", address: "400 Plainfield", usda_uid: "00920"})
 
       args = %{
-        username: "Bob",
+        username: "bart",
         password: "password",
-        name: "bob",
-        email: "bob@bob.com",
+        name: "Bartleby",
+        email: "bart@bartlysons.com",
         usda_uid: "00920",
-        farm_name: "bob's sunflower farm"
+        farm_name: "Bartleby & Son's Sunflower Farm",
       }
 
       assert :ok = NomNomsFarm.register_farm_admin(args)
@@ -28,15 +28,31 @@ defmodule NomNomsFarmTest do
 
     test "fails when usda_uid is not found in db" do
       args = %{
-        username: "Bob",
+        username: "bart",
         password: "password",
-        name: "bob",
-        email: "bob@bob.com",
+        name: "Bartleby",
+        email: "bart@bartlysons.com",
         usda_uid: "00920",
-        farm_name: "bob's sunflower farm"
+        farm_name: "Bartleby & Son's Sunflower Farm",
       }
 
       assert {:error, :invalid_usda_uid} = NomNomsFarm.register_farm_admin(args)
+    end
+
+    test "fails when invalid data is entered" do
+      Repo.insert!(%UsdaFarm{name: "Bartleby & Son's", address: "400 Plainfield", usda_uid: "00920"})
+      Repo.insert!(%User{email: "bart@bartlysons.com"})
+
+      args = %{
+        username: "bart",
+        password: "password",
+        name: "Bartleby",
+        email: "bart@bartlysons.com",
+        usda_uid: "00920",
+        farm_name: "Bartleby & Son's Sunflower Farm",
+      }
+
+      assert {:error, :creating_user} = NomNomsFarm.register_farm_admin(args)
     end
   end
 end
