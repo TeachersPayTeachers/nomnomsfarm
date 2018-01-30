@@ -19,7 +19,7 @@ defmodule NomNomsFarm.User do
     |> Repo.insert()
     |> case do
          {:ok, %{id: user_id}} -> {:ok, user_id}
-         {:error, _} -> {:error, :creating_user}
+         {:error, _} -> {:error, :create_user}
        end
   end
 

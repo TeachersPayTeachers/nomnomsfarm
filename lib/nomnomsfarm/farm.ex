@@ -15,7 +15,7 @@ defmodule NomNomsFarm.Farm do
     |> Repo.insert()
     |> case do
          {:ok, %{id: farm_id}} -> {:ok, farm_id}
-         {:error, _} -> {:error, :creating_farm}
+         {:error, _} -> {:error, :create_farm}
        end
   end
 

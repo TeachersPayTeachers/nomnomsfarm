@@ -52,7 +52,7 @@ defmodule NomNomsFarmTest do
         farm_name: "Bartleby & Son's Sunflower Farm",
       }
 
-      assert {:error, :creating_user} = NomNomsFarm.register_farm_admin(args)
+      assert {:error, :create_user} = NomNomsFarm.register_farm_admin(args)
     end
   end
 end

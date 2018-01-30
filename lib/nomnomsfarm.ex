@@ -19,7 +19,7 @@ defmodule NomNomsFarm do
     with {:ok, usda_farm_id} <- get_usda_farm_id(usda_uid),
          :ok <- farm_is_available(usda_farm_id),
          merged_args = Map.merge(args, %{usda_farm_id: usda_farm_id}),
-         {:ok, _} <- create_records_refactored(merged_args)
+         {:ok, _} <- create_records(merged_args)
     do
       :ok
     else
@@ -43,6 +43,7 @@ defmodule NomNomsFarm do
     end
   end
 
+  @spec create_records(map) :: {:ok, integer} | {:error, atom}
   defp create_records(%{
     username: username,
     password: password,
@@ -63,6 +64,7 @@ defmodule NomNomsFarm do
     end)
   end
 
+  @spec create_records(map) :: {:ok, map} | {:error, atom}
   def create_records_refactored(%{
     username: username,
     password: password,
@@ -72,11 +74,11 @@ defmodule NomNomsFarm do
     farm_name: farm_name
   }) do
     Multi.new()
-    |> Multi.run(:creating_user, fn(_) -> User.create_refactored(username, password, name, email) end)
-    |> Multi.run(:creating_farm, fn(_) -> Farm.create_refactored(farm_name, usda_farm_id) end)
-    |> Multi.run(:creating_farmer, fn(multi) ->
-         user_id = multi.creating_user.id
-         farm_id = multi.creating_farm.id
+    |> Multi.run(:create_user, fn(_) -> User.create_refactored(username, password, name, email) end)
+    |> Multi.run(:create_farm, fn(_) -> Farm.create_refactored(farm_name, usda_farm_id) end)
+    |> Multi.run(:create_farmer, fn(multi) ->
+         user_id = multi.create_user.id
+         farm_id = multi.create_farm.id
 
          Farmer.create_refactored(user_id, farm_id, true)
        end)
@@ -92,7 +94,7 @@ defmodule NomNomsFarm do
   @spec error_message(atom) :: String.t
   def error_message(:invalid_usda_uid), do: "Invalid USDA uid entered."
   def error_message(:farm_already_claimed), do: "This farm has already been claimed."
-  def error_message(:creating_farm), do: "There was an error registering the farm."
-  def error_message(:creating_farmer), do: "There was an error registering the user."
-  def error_message(:creating_user), do: "There was an error registering the user."
+  def error_message(:create_farm), do: "There was an error registering the farm."
+  def error_message(:create_farmer), do: "There was an error registering the user."
+  def error_message(:create_user), do: "There was an error registering the user."
 end
