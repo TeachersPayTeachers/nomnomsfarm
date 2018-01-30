@@ -14,14 +14,14 @@ defmodule NomNomsFarm do
     farm_name: String.t,
   }
 
-  @spec register_farm_admin(new_admin_args) :: :ok | {:error, String.t}
+  @spec register_farm_admin(new_admin_args) :: {:ok, user_id} | {:error, String.t}
   def register_farm_admin(%{usda_uid: usda_uid} = args) do
     with {:ok, usda_farm_id} <- get_usda_farm_id(usda_uid),
          :ok <- farm_is_available(usda_farm_id),
          merged_args = Map.merge(args, %{usda_farm_id: usda_farm_id}),
-         {:ok, _} <- create_records(merged_args)
+         {:ok, user_id} <- create_records(merged_args)
     do
-      :ok
+      {:ok, user_id}
     else
       {:error, _} = e -> e
     end
@@ -64,7 +64,7 @@ defmodule NomNomsFarm do
     end)
   end
 
-  @spec create_records(map) :: {:ok, map} | {:error, atom}
+  @spec create_records(map) :: {:ok, integer} | {:error, atom}
   def create_records_refactored(%{
     username: username,
     password: password,
@@ -84,7 +84,8 @@ defmodule NomNomsFarm do
        end)
     |> Repo.transaction()
     |> case do
-         {:ok, _} = result -> result
+         {:ok, _} = result ->
+           {:ok, result.create_user.id}
          {:error, failed_operation, _failed_value, _changes} = e ->
            IO.inspect e
            {:error, failed_operation}
