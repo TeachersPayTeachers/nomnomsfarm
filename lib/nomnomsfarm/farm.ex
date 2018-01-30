@@ -2,6 +2,7 @@ defmodule NomNomsFarm.Farm do
   @moduledoc false
 
   use Ecto.Schema
+  alias NomNomsFarm.{Farm, Repo}
 
   schema "farms" do
     field :name, :string
@@ -10,11 +11,17 @@ defmodule NomNomsFarm.Farm do
 
   @spec create(String.t, integer) :: {:ok, integer} | {:error, atom}
   def create(name, usda_farm_id) do
-    %NomNomsFarm.Farm{name: name, usda_farm_id: usda_farm_id}
-    |> NomNomsFarm.Repo.insert()
+    %Farm{name: name, usda_farm_id: usda_farm_id}
+    |> Repo.insert()
     |> case do
          {:ok, %{id: farm_id}} -> {:ok, farm_id}
          {:error, _} -> {:error, :creating_farm}
        end
+  end
+
+  @spec create_refactored(String.t, integer) :: {:ok, %Farm{}} | {:error, Ecto.Changeset.t}
+  def create_refactored(name, usda_farm_id) do
+    %Farm{name: name, usda_farm_id: usda_farm_id}
+    |> Repo.insert()
   end
 end

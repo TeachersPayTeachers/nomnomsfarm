@@ -19,7 +19,7 @@ defmodule NomNomsFarm do
     with {:ok, usda_farm_id} <- get_usda_farm_id(usda_uid),
          :ok <- farm_is_available(usda_farm_id),
          merged_args = Map.merge(args, %{usda_farm_id: usda_farm_id}),
-         {:ok, _} <- create_records_multi(merged_args)
+         {:ok, _} <- create_records_refactored(merged_args)
     do
       :ok
     else
@@ -63,7 +63,7 @@ defmodule NomNomsFarm do
     end)
   end
 
-  def create_records_multi(%{
+  def create_records_refactored(%{
     username: username,
     password: password,
     name: name,
@@ -72,18 +72,20 @@ defmodule NomNomsFarm do
     farm_name: farm_name
   }) do
     Multi.new()
-    |> Multi.run(:creating_user, fn(_) -> User.create(username, password, name, email) end)
-    |> Multi.run(:creating_farm, fn(_) -> Farm.create(farm_name, usda_farm_id) end)
+    |> Multi.run(:creating_user, fn(_) -> User.create_refactored(username, password, name, email) end)
+    |> Multi.run(:creating_farm, fn(_) -> Farm.create_refactored(farm_name, usda_farm_id) end)
     |> Multi.run(:creating_farmer, fn(multi) ->
-         user_id = Map.get(multi, :creating_user)
-         farm_id = Map.get(multi, :creating_farm)
+         user_id = multi.creating_user.id
+         farm_id = multi.creating_farm.id
 
-         Farmer.create(user_id, farm_id, true)
+         Farmer.create_refactored(user_id, farm_id, true)
        end)
     |> Repo.transaction()
     |> case do
          {:ok, _} = result -> result
-         {:error, failure, _, _} -> {:error, failure}
+         {:error, failed_operation, _failed_value, _changes} = e ->
+           IO.inspect e
+           {:error, failed_operation}
        end
   end
 
