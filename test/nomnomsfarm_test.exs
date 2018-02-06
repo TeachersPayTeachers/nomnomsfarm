@@ -12,7 +12,7 @@ defmodule NomNomsFarmTest do
 
   describe "register_farm_admin/1" do
     test "successful registers a farm admin" do
-      Repo.insert!(%UsdaFarm{name: "Bartleby & Son's", address: "400 Plainfield", usda_uid: "00920"})
+      Repo.insert!(%UsdaFarm{id: 1, name: "Bartleby & Son's", address: "400 Plainfield", usda_uid: "00920"})
 
       args = %{
         username: "bart",
@@ -20,10 +20,9 @@ defmodule NomNomsFarmTest do
         name: "Bartleby",
         email: "bart@bartlysons.com",
         usda_uid: "00920",
-        farm_name: "Bartleby & Son's Sunflower Farm",
       }
 
-      assert :ok = NomNomsFarm.register_farm_admin(args)
+      assert {:ok, _} = NomNomsFarm.register_farm_admin(args)
     end
 
     test "fails when usda_uid is not found in db" do
@@ -33,10 +32,51 @@ defmodule NomNomsFarmTest do
         name: "Bartleby",
         email: "bart@bartlysons.com",
         usda_uid: "00920",
-        farm_name: "Bartleby & Son's Sunflower Farm",
       }
 
       assert {:error, :invalid_usda_uid} = NomNomsFarm.register_farm_admin(args)
+    end
+
+    test "fails when farm is already claimed" do
+      Repo.insert!(%UsdaFarm{id: 1, name: "Bartleby & Son's", address: "400 Plainfield", usda_uid: "00920"})
+      Repo.insert!(%Farm{usda_farm_id: 1, name: "Bartleby & Son's"})
+
+      args = %{
+        username: "bart",
+        password: "password",
+        name: "Bartleby",
+        email: "bart@bartlysons.com",
+        usda_uid: "00920",
+      }
+
+      assert {:error, :farm_already_claimed} = NomNomsFarm.register_farm_admin(args)
+    end
+  end
+
+  describe "create_records_refactored/1" do
+    test "successfully persists valid records" do
+      Repo.insert!(%UsdaFarm{id: 1, name: "Bartleby & Son's", address: "400 Plainfield", usda_uid: "00920"})
+
+      args = %{
+        username: "bart",
+        password: "password",
+        name: "Bartleby",
+        email: "bart@bartlysons.com",
+        usda_farm_id: 1,
+        farm_name: "Bartleby & Son's Sunflower Farm",
+      }
+
+      assert {:ok, created_user_id} = NomNomsFarm.create_records_refactored(args)
+
+      created_user = Repo.get(User, created_user_id)
+      assert created_user.name == args.name
+      assert created_user.username == args.username
+
+      created_farm_id =
+        Repo.get_by(Farmer, user_id: created_user_id)
+        |> Map.get(:farm_id)
+      created_farm = Repo.get(Farm, created_farm_id)
+      assert created_farm.name == args.farm_name
     end
 
     test "fails when invalid data is entered" do
@@ -48,11 +88,11 @@ defmodule NomNomsFarmTest do
         password: "password",
         name: "Bartleby",
         email: "bart@bartlysons.com",
-        usda_uid: "00920",
+        usda_farm_id: 1,
         farm_name: "Bartleby & Son's Sunflower Farm",
       }
 
-      assert {:error, :create_user} = NomNomsFarm.register_farm_admin(args)
+      assert {:error, "[email: {\"has already been taken\", []}]"} = NomNomsFarm.create_records_refactored(args)
     end
   end
 end

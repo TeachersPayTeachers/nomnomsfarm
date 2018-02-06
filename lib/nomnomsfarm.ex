@@ -14,12 +14,12 @@ defmodule NomNomsFarm do
     farm_name: String.t,
   }
 
-  @spec register_farm_admin(new_admin_args) :: {:ok, user_id} | {:error, String.t}
+  @spec register_farm_admin(new_admin_args) :: {:ok, integer} | {:error, String.t}
   def register_farm_admin(%{usda_uid: usda_uid} = args) do
-    with {:ok, usda_farm_id} <- get_usda_farm_id(usda_uid),
+    with {:ok, %{id: usda_farm_id, name: farm_name}} <- get_farm_by_usda_uid(usda_uid),
          :ok <- farm_is_available(usda_farm_id),
-         merged_args = Map.merge(args, %{usda_farm_id: usda_farm_id}),
-         {:ok, user_id} <- create_records(merged_args)
+         merged_args = Map.merge(args, %{usda_farm_id: usda_farm_id, farm_name: farm_name}),
+         {:ok, user_id} <- create_records_refactored(merged_args)
     do
       {:ok, user_id}
     else
@@ -27,11 +27,11 @@ defmodule NomNomsFarm do
     end
   end
 
-  @spec get_usda_farm_id(String.t) :: {:ok, integer} | {:error, atom}
-  defp get_usda_farm_id(usda_uid) do
+  @spec get_farm_by_usda_uid(String.t) :: {:ok, %UsdaFarm{}} | {:error, atom}
+  defp get_farm_by_usda_uid(usda_uid) do
     case Repo.get_by(UsdaFarm, usda_uid: usda_uid) do
-      %{id: id} -> {:ok, id}
       nil -> {:error, :invalid_usda_uid}
+      farm -> {:ok, farm}
     end
   end
 
@@ -44,7 +44,7 @@ defmodule NomNomsFarm do
   end
 
   @spec create_records(map) :: {:ok, integer} | {:error, atom}
-  defp create_records(%{
+  def create_records(%{
     username: username,
     password: password,
     name: name,
@@ -64,7 +64,7 @@ defmodule NomNomsFarm do
     end)
   end
 
-  @spec create_records(map) :: {:ok, integer} | {:error, atom}
+  @spec create_records_refactored(map) :: {:ok, integer} | {:error, atom | String.t}
   def create_records_refactored(%{
     username: username,
     password: password,
@@ -84,18 +84,23 @@ defmodule NomNomsFarm do
        end)
     |> Repo.transaction()
     |> case do
-         {:ok, _} = result ->
+         {:ok, result} ->
            {:ok, result.create_user.id}
-         {:error, failed_operation, _failed_value, _changes} = e ->
-           IO.inspect e
-           {:error, failed_operation}
+         {:error, failed_operation, failed_value, _changes}->
+           error =
+             case failed_value.errors do
+               [] -> failed_operation
+               errors -> "#{inspect errors}"
+             end
+           {:error, error}
        end
   end
 
-  @spec error_message(atom) :: String.t
+  @spec error_message(atom | String.t) :: String.t
   def error_message(:invalid_usda_uid), do: "Invalid USDA uid entered."
   def error_message(:farm_already_claimed), do: "This farm has already been claimed."
   def error_message(:create_farm), do: "There was an error registering the farm."
   def error_message(:create_farmer), do: "There was an error registering the user."
   def error_message(:create_user), do: "There was an error registering the user."
+  def error_message(other), do: "Error: #{other}"
 end
