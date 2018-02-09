@@ -12,6 +12,11 @@ config :nomnomsfarm, NomNomsFarm.Repo,
 config :nomnomsfarm,
   ecto_repos: [NomNomsFarm.Repo]
 
+config :nomnomsfarm, NomNomsFarm.Web.Endpoint,
+  url: [host: "localhost"],
+  secret_key_base: "123123",
+  pubsub: [name: NomNomsFarm.PubSub,
+           adapter: Phoenix.PubSub.PG2]
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this

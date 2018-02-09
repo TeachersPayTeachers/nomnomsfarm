@@ -6,11 +6,16 @@ defmodule NomNomsFarm.Application do
   use Application
 
   def start(_type, _args) do
+    import Supervisor.Spec
+
     # List all child processes to be supervised
     children = [
+      # Start the Ecto repository
+      supervisor(NomNomsFarm.Repo, []),
+      # Start the endpoint when the application starts
+      supervisor(NomNomsFarm.Web.Endpoint, []),
       # Starts a worker by calling: NomNomsFarm.Worker.start_link(arg)
       # {NomNomsFarm.Worker, arg},
-      NomNomsFarm.Repo,
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

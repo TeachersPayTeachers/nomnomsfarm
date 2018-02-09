@@ -11,7 +11,6 @@ defmodule NomNomsFarm do
     name: String.t,
     email: String.t,
     usda_uid: String.t,
-    farm_name: String.t,
   }
 
   @spec register_farm_admin(new_admin_args) :: {:ok, integer} | {:error, String.t}
