@@ -54,7 +54,7 @@ defmodule NomNomsFarm.NomNomsFarmTest do
     end
   end
 
-  describe "create_records_refactored/1" do
+  describe "create_records/1" do
     test "successfully persists valid records" do
       args = %{
         username: "bart",
@@ -65,7 +65,7 @@ defmodule NomNomsFarm.NomNomsFarmTest do
         farm_name: "Bartleby & Son's Sunflower Farm",
       }
 
-      assert {:ok, created_user_id} = NomNomsFarm.create_records_refactored(args)
+      assert {:ok, created_user_id} = NomNomsFarm.create_records(args)
 
       created_user = Repo.get(User, created_user_id)
       assert created_user.name == args.name
@@ -90,7 +90,7 @@ defmodule NomNomsFarm.NomNomsFarmTest do
         farm_name: "Bartleby & Son's Sunflower Farm",
       }
 
-      assert {:error, "[email: {\"has already been taken\", []}]"} = NomNomsFarm.create_records_refactored(args)
+      assert {:error, "[email: {\"has already been taken\", []}]"} = NomNomsFarm.create_records(args)
     end
   end
 end

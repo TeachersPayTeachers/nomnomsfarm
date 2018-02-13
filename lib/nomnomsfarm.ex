@@ -18,7 +18,7 @@ defmodule NomNomsFarm do
     with {:ok, %{id: usda_farm_id, name: farm_name}} <- get_farm_by_usda_uid(usda_uid),
          :ok <- farm_is_available(usda_farm_id),
          merged_args = Map.merge(args, %{usda_farm_id: usda_farm_id, farm_name: farm_name}),
-         {:ok, user_id} <- create_records_refactored(merged_args)
+         {:ok, user_id} <- create_records(merged_args)
     do
       {:ok, user_id}
     else
@@ -42,7 +42,7 @@ defmodule NomNomsFarm do
     end
   end
 
-  @spec create_records(map) :: {:ok, integer} | {:error, atom}
+  @spec create_records(map) :: {:ok, integer} | {:error, atom | String.t}
   def create_records(%{
     username: username,
     password: password,
@@ -51,35 +51,18 @@ defmodule NomNomsFarm do
     usda_farm_id: usda_farm_id,
     farm_name: farm_name
   }) do
-    Repo.transaction(fn ->
-      with {:ok, user_id} <- User.create(username, password, name, email),
-           {:ok, farm_id} <- Farm.create(farm_name, usda_farm_id),
-           {:ok, _} <- Farmer.create(user_id, farm_id, true)
-      do
-        user_id
-      else
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
-  end
-
-  @spec create_records_refactored(map) :: {:ok, integer} | {:error, atom | String.t}
-  def create_records_refactored(%{
-    username: username,
-    password: password,
-    name: name,
-    email: email,
-    usda_farm_id: usda_farm_id,
-    farm_name: farm_name
-  }) do
     Multi.new()
-    |> Multi.run(:create_user, fn(_) -> User.create_refactored(username, password, name, email) end)
-    |> Multi.run(:create_farm, fn(_) -> Farm.create_refactored(farm_name, usda_farm_id) end)
+    |> Multi.run(:create_user, fn(_) ->
+         User.create(username, password, name, email) 
+       end)
+    |> Multi.run(:create_farm, fn(_) ->
+         Farm.create(farm_name, usda_farm_id)
+       end)
     |> Multi.run(:create_farmer, fn(multi) ->
          user_id = multi.create_user.id
          farm_id = multi.create_farm.id
 
-         Farmer.create_refactored(user_id, farm_id, true)
+         Farmer.create(user_id, farm_id, true)
        end)
     |> Repo.transaction()
     |> case do

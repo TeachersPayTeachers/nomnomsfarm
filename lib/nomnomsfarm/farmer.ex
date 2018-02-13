@@ -5,8 +5,8 @@ defmodule NomNomsFarm.Farmer do
   alias NomNomsFarm.{Farmer, Repo}
 
   schema "farmers" do
-    field :user_id, :integer
-    field :farm_id, :integer
+    field :user_id, :id
+    field :farm_id, :id
     field :is_admin, :boolean
   end
 
