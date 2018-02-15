@@ -21,37 +21,21 @@ defmodule NomNomsFarm.GraphQL.RegisterFarmAdminTest do
           username: "bart",
           password: "password",
           name: "Bartleby",
-          email: "bart@bartlysons.com",
+          email: "bart@bartlebysons.com",
           usdaUid: "00920",
         )
       }
       """
     assert {:ok, result} = Absinthe.run(mutation, NomNomsFarm.Web.Schema)
-
-    assert is_integer(result[:data]["registerFarmAdmin"])
     refute Map.has_key?(result, :errors)
-  end
 
-  test "returns a userful error message when request fails" do
-    Repo.insert!(%Farm{usda_farm_id: 1, name: "Bartleby & Son's"})
-
-    mutation = """
-      mutation {
-        registerFarmAdmin(
-          username: "bart",
-          password: "password",
-          name: "Bartleby",
-          email: "bart@bartlysons.com",
-          usdaUid: "00920",
-        )
-      }
-      """
-    assert {:ok, %{errors: [error| _]}} = Absinthe.run(mutation, NomNomsFarm.Web.Schema)
-    assert error.message == NomNomsFarm.error_message(:farm_already_claimed)
+    %{data: %{"registerFarmAdmin" => user_id}} = result
+    created_user = Repo.get(User, user_id)
+    assert created_user.username == "bart"
   end
 
   test "returns a helpful error message when request fails" do
-    Repo.insert!(%User{email: "bart@bartlysons.com"})
+    Repo.insert!(%User{email: "bart@bartlebysons.com"})
 
     mutation = """
       mutation {
@@ -59,12 +43,14 @@ defmodule NomNomsFarm.GraphQL.RegisterFarmAdminTest do
           username: "bart",
           password: "password",
           name: "Bartleby",
-          email: "bart@bartlysons.com",
+          email: "bart@bartlebysons.com",
           usdaUid: "00920",
         )
       }
       """
     assert {:ok, %{errors: [error| _]}} = Absinthe.run(mutation, NomNomsFarm.Web.Schema)
-    assert String.contains?(error.message, "[email: {\"has already been taken\"")
+
+    expected_message = NomNomsFarm.error_message(:email_already_claimed)
+    assert String.contains?(error.message, expected_message)
   end
 end

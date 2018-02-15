@@ -25,6 +25,6 @@ defmodule NomNomsFarm.User do
     |> cast(params, [:username, :password, :name, :email])
     |> validate_required([:username, :password, :name, :email])
     |> validate_format(:email, ~r/@/)
-    |> unique_constraint(:email)
+    |> unique_constraint(:email, message: NomNomsFarm.error_message(:email_already_claimed))
   end
 end

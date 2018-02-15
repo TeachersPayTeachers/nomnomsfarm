@@ -20,7 +20,7 @@ defmodule NomNomsFarm.NomNomsFarmTest do
         username: "bart",
         password: "password",
         name: "Bartleby",
-        email: "bart@bartlysons.com",
+        email: "bart@bartlebysons.com",
         usda_uid: "00920",
       }
 
@@ -32,25 +32,14 @@ defmodule NomNomsFarm.NomNomsFarmTest do
         username: "bart",
         password: "password",
         name: "Bartleby",
-        email: "bart@bartlysons.com",
+        email: "bart@bartlebysons.com",
         usda_uid: "blarg",
       }
 
-      assert {:error, :invalid_usda_uid} = NomNomsFarm.register_farm_admin(args)
-    end
+      assert {:error, message} = NomNomsFarm.register_farm_admin(args)
 
-    test "fails when farm is already claimed" do
-      Repo.insert!(%Farm{usda_farm_id: 1, name: "Bartleby & Son's"})
-
-      args = %{
-        username: "bart",
-        password: "password",
-        name: "Bartleby",
-        email: "bart@bartlysons.com",
-        usda_uid: "00920",
-      }
-
-      assert {:error, :farm_already_claimed} = NomNomsFarm.register_farm_admin(args)
+      expected_message = NomNomsFarm.error_message(:invalid_usda_uid)
+      assert String.contains?(message, expected_message)
     end
   end
 
@@ -60,7 +49,7 @@ defmodule NomNomsFarm.NomNomsFarmTest do
         username: "bart",
         password: "password",
         name: "Bartleby",
-        email: "bart@bartlysons.com",
+        email: "bart@bartlebysons.com",
         usda_farm_id: 1,
         farm_name: "Bartleby & Son's Sunflower Farm",
       }
@@ -78,19 +67,42 @@ defmodule NomNomsFarm.NomNomsFarmTest do
       assert created_farm.name == args.farm_name
     end
 
-    test "fails when invalid data is entered" do
-      Repo.insert!(%User{email: "bart@bartlysons.com"})
+    test "fails when non-unique user email is entered" do
+      Repo.insert!(%User{email: "bart@bartlebysons.com"})
 
       args = %{
         username: "bart",
         password: "password",
         name: "Bartleby",
-        email: "bart@bartlysons.com",
+        email: "bart@bartlebysons.com",
         usda_farm_id: 1,
         farm_name: "Bartleby & Son's Sunflower Farm",
       }
 
-      assert {:error, "[email: {\"has already been taken\", []}]"} = NomNomsFarm.create_records(args)
+      assert {:error, message} = NomNomsFarm.create_records(args)
+
+      expected_message = NomNomsFarm.error_message(:email_already_claimed)
+      assert String.contains?(message, expected_message)
+    end
+
+    test "fails when USDA farm has already been claimed" do
+      Repo.insert!(%Farm{usda_farm_id: 1, name: "Bartleby & Son's Sunflower Farm"})
+
+      args = %{
+        username: "bart",
+        password: "password",
+        name: "Bartleby",
+        email: "bart@bartlebysons.com",
+        usda_farm_id: 1,
+        farm_name: "Bartleby & Son's Sunflower Farm",
+      }
+
+      assert {:error, message} = NomNomsFarm.create_records(args)
+
+      expected_message = NomNomsFarm.error_message(:farm_already_claimed)
+      assert String.contains?(message, expected_message)
+
+      refute Repo.get_by(User, email: "bart@bartlysons")
     end
   end
 end
