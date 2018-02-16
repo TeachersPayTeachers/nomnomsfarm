@@ -37,6 +37,6 @@ defmodule NomNomsFarm.Mixfile do
   end
 
   defp aliases do
-    ["test": ["ecto.create --quiet", "ecto.migrate", "test"]]
+    ["setup": ["ecto.create --quiet", "ecto.migrate", "run priv/ecto/seed.exs"]]
   end
 end
